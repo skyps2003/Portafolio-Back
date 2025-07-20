@@ -1,5 +1,5 @@
 package IHC.Portafolio.Entity;
 
-public class TUsuario_habilidad {
+public class THabilidad_Usuario {
     
 }

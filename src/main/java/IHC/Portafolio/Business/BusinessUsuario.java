@@ -87,4 +87,57 @@ public class BusinessUsuario {
         return true;
     }
 
+    /*************************
+     * L O G I N 
+     **************************/
+
+   public boolean login(DtoUsuario dtoUsuario) {
+        
+        Optional<TUsuario> optional = repoUsuario.findByEmail(dtoUsuario.getEmail());
+        if (!optional.isPresent()) {
+            return false; 
+        }
+
+        TUsuario usuario = optional.get();
+        
+        
+        if (!usuario.getContraseña().equals(dtoUsuario.getContraseña())) {
+            return false;
+        }
+
+     
+        if (!usuario.isActivo()) {
+            return false;
+        }
+
+        return true; 
+    }
+    /*************************
+     * U P D A T E 
+     **************************/
+    @Transactional
+    public boolean update(Long id, DtoUsuario dtoUsuario) {
+        Optional<TUsuario> optional = repoUsuario.findById(id);
+        if (!optional.isPresent()) {
+            return false;
+        }
+
+        TUsuario usuario = optional.get();
+        usuario.setNombre(dtoUsuario.getNombre());
+        usuario.setApellidos(dtoUsuario.getApellidos());
+        usuario.setProfesion(dtoUsuario.getProfesion());
+        usuario.setEmail(dtoUsuario.getEmail());
+        usuario.setCelular(dtoUsuario.getCelular());
+        usuario.setContraseña(dtoUsuario.getContraseña());
+        usuario.setFotoUrl(dtoUsuario.getFotoUrl());
+        usuario.setResumen(dtoUsuario.getResumen());
+        usuario.setFechaNacimiento(dtoUsuario.getFechaNacimiento());
+        usuario.setToken(dtoUsuario.getToken());
+        usuario.setActivo(dtoUsuario.isActivo());
+
+        repoUsuario.save(usuario);
+        return true;
+    }
+
+
 }

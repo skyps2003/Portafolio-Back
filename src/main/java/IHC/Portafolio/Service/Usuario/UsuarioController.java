@@ -93,10 +93,10 @@ public class UsuarioController {
         Date fechaDate = Date.from(fechaLocal.atStartOfDay(ZoneId.systemDefault()).toInstant());
         dto.setFechaNacimiento(fechaDate);
 
-        // Insertar usuario y obtener token
+        
         String token = businessUsuario.insert(dto);
 
-        // Enviar correo de verificación
+        
         emailService.sendVerificationEmail(dto.getEmail(), token);
 
         response.mo.addResponseMesssage("Registro exitoso. Verifica tu correo para confirmar la cuenta.");
@@ -113,6 +113,7 @@ public class UsuarioController {
     /**
      * Confirmación de email mediante token.
      */
+
     @GetMapping("/confirmar")
     public ResponseEntity<ResponseInsert> confirmarEmail(@RequestParam String token) {
         ResponseInsert response = new ResponseInsert();
@@ -131,6 +132,7 @@ public class UsuarioController {
     /**
      * Endpoint para probar envío de email.
      */
+    
     @GetMapping("/test-email")
     public ResponseEntity<String> testEmail(@RequestParam String email) {
         try {
@@ -142,4 +144,53 @@ public class UsuarioController {
                     .body("Error al enviar correo: " + e.getMessage());
         }
     }
+    /*
+     * L O G I N
+     */
+    @PostMapping("/login")
+    public ResponseEntity<ResponseInsert> login(@Valid @RequestBody DtoUsuario dtoUsuario) {
+        ResponseInsert response = new ResponseInsert();
+        try {
+            boolean isAuthenticated = businessUsuario.login(dtoUsuario);
+            if (isAuthenticated) {
+                response.mo.addResponseMesssage("Inicio de sesión exitoso");
+                response.mo.setSuccess();
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } else {
+                response.mo.addResponseMesssage("Email o contraseña incorrectos, o cuenta no activada");
+                return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
+            }
+        } catch (Exception e) {
+            response.mo.addResponseMesssage("Error interno: " + e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    /*
+     * U P D A T E
+     */
+    @PutMapping("/actualizar/{id}")
+    public ResponseEntity<ResponseInsert> actualizarUsuario(
+            @PathVariable Long id,
+            @Valid @RequestBody DtoUsuario dtoUsuario) {
+
+        ResponseInsert response = new ResponseInsert();
+        try {
+            boolean actualizado = businessUsuario.update(id, dtoUsuario);
+
+            if (actualizado) {
+                response.mo.addResponseMesssage("Usuario actualizado correctamente.");
+                response.mo.setSuccess();
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } else {
+                response.mo.addResponseMesssage("Usuario no encontrado.");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            response.mo.addResponseMesssage("Error al actualizar el usuario: " + e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+
 }
