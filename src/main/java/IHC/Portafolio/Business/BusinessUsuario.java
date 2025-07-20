@@ -7,6 +7,7 @@ import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import IHC.Portafolio.Dto.DtoUsuario;
 import IHC.Portafolio.Entity.TUsuario;
@@ -40,38 +41,34 @@ public class BusinessUsuario {
         }
         return listDtoUsuarios;
     }
+
     /************************
-     * C O R R E O 
+     * REGISTRO CON TOKEN
      ************************/
     @Transactional
     public String insert(DtoUsuario dtoUsuario) {
-        
         TUsuario tUsuario = new TUsuario();
         tUsuario.setNombre(dtoUsuario.getNombre());
         tUsuario.setApellidos(dtoUsuario.getApellidos());
         tUsuario.setProfesion(dtoUsuario.getProfesion());
         tUsuario.setEmail(dtoUsuario.getEmail());
         tUsuario.setCelular(dtoUsuario.getCelular());
-        tUsuario.setContraseña(dtoUsuario.getContraseña());
+        tUsuario.setContraseña(dtoUsuario.getContraseña()); 
         tUsuario.setFotoUrl(dtoUsuario.getFotoUrl());
         tUsuario.setResumen(dtoUsuario.getResumen());
         tUsuario.setFechaNacimiento(dtoUsuario.getFechaNacimiento());
-        
-        /*****************
-         * T O K E N 
-         *****************/
+
         String token = UUID.randomUUID().toString();
         tUsuario.setToken(token);
         tUsuario.setActivo(false);
 
         repoUsuario.save(tUsuario);
-
-        return token; 
+        return token;
     }
-    /*************************
-    * C O N F I R M A C I O N 
-    **************************/
 
+    /*************************
+    * CONFIRMAR EMAIL
+    **************************/
     @Transactional
     public boolean confirmEmail(String token) {
         Optional<TUsuario> optional = repoUsuario.findByToken(token);
@@ -81,39 +78,32 @@ public class BusinessUsuario {
 
         TUsuario usuario = optional.get();
         usuario.setActivo(true);
-        usuario.setToken(null); 
+        usuario.setToken(null);
         repoUsuario.save(usuario);
 
         return true;
     }
 
     /*************************
-     * L O G I N 
+     * LOGIN CON HASH
      **************************/
-
-   public boolean login(DtoUsuario dtoUsuario) {
-        
+    public boolean loginConHash(DtoUsuario dtoUsuario, PasswordEncoder passwordEncoder) {
         Optional<TUsuario> optional = repoUsuario.findByEmail(dtoUsuario.getEmail());
         if (!optional.isPresent()) {
-            return false; 
+            return false;
         }
 
         TUsuario usuario = optional.get();
-        
-        
-        if (!usuario.getContraseña().equals(dtoUsuario.getContraseña())) {
+
+        if (!passwordEncoder.matches(dtoUsuario.getContraseña(), usuario.getContraseña())) {
             return false;
         }
 
-     
-        if (!usuario.isActivo()) {
-            return false;
-        }
-
-        return true; 
+        return usuario.isActivo();
     }
+
     /*************************
-     * U P D A T E 
+     * UPDATE CON HASH
      **************************/
     @Transactional
     public boolean update(Long id, DtoUsuario dtoUsuario) {
@@ -128,7 +118,11 @@ public class BusinessUsuario {
         usuario.setProfesion(dtoUsuario.getProfesion());
         usuario.setEmail(dtoUsuario.getEmail());
         usuario.setCelular(dtoUsuario.getCelular());
-        usuario.setContraseña(dtoUsuario.getContraseña());
+
+        if (dtoUsuario.getContraseña() != null && !dtoUsuario.getContraseña().isEmpty()) {
+            usuario.setContraseña(dtoUsuario.getContraseña());
+        }
+
         usuario.setFotoUrl(dtoUsuario.getFotoUrl());
         usuario.setResumen(dtoUsuario.getResumen());
         usuario.setFechaNacimiento(dtoUsuario.getFechaNacimiento());
@@ -139,5 +133,26 @@ public class BusinessUsuario {
         return true;
     }
 
+    /*************************
+     * UPDATE SOLO FOTO Y RESUMEN
+     **************************/
+    @Transactional
+    public boolean updateFotoResumen(Long id, String fotoUrl, String resumen) {
+        Optional<TUsuario> optional = repoUsuario.findById(id);
+        if (!optional.isPresent()) {
+            return false;
+        }
+
+        TUsuario usuario = optional.get();
+        if (fotoUrl != null && !fotoUrl.isEmpty()) {
+            usuario.setFotoUrl(fotoUrl);
+        }
+        if (resumen != null && !resumen.isEmpty()) {
+            usuario.setResumen(resumen);
+        }
+
+        repoUsuario.save(usuario);
+        return true;
+    }
 
 }

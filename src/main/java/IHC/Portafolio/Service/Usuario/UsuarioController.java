@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import IHC.Portafolio.Business.BusinessUsuario;
 import IHC.Portafolio.Dto.DtoUsuario;
@@ -31,6 +32,9 @@ public class UsuarioController {
 
     @Autowired
     private BusinessUsuario businessUsuario;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * Obtener todos los usuarios (solo datos públicos).
@@ -59,61 +63,57 @@ public class UsuarioController {
 
     /**
      * Registro de usuario con verificación de email.
-     * Solo se permiten correos @unamba.edu.pe
      */
     @PostMapping(path = "/registro", consumes = "multipart/form-data")
     public ResponseEntity<ResponseInsert> registrarUsuario(
-        @Valid @ModelAttribute RequestInsert request,
-        BindingResult bindingResult) {
+            @Valid @ModelAttribute RequestInsert request,
+            BindingResult bindingResult) {
 
-    ResponseInsert response = new ResponseInsert();
-    try {
-        if (bindingResult.hasErrors()) {
-            bindingResult.getAllErrors().forEach(error -> {
-                response.mo.addResponseMesssage(error.getDefaultMessage());
-            });
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+        ResponseInsert response = new ResponseInsert();
+        try {
+            if (bindingResult.hasErrors()) {
+                bindingResult.getAllErrors().forEach(error -> {
+                    response.mo.addResponseMesssage(error.getDefaultMessage());
+                });
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            if (!request.getEmail().toLowerCase().endsWith("@unamba.edu.pe")) {
+                response.mo.addResponseMesssage("Solo se permiten correos @unamba.edu.pe para registrarse.");
+                return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
+            }
+
+            DtoUsuario dto = new DtoUsuario();
+            dto.setNombre(request.getNombre());
+            dto.setApellidos(request.getApellidos());
+            dto.setEmail(request.getEmail());
+
+            // Encriptar contraseña
+            dto.setContraseña(passwordEncoder.encode(request.getContraseña()));
+
+            dto.setCelular(request.getCelular());
+            dto.setProfesion(request.getProfesion());
+
+            LocalDate fechaLocal = request.getFechaNacimiento();
+            Date fechaDate = Date.from(fechaLocal.atStartOfDay(ZoneId.systemDefault()).toInstant());
+            dto.setFechaNacimiento(fechaDate);
+
+            String token = businessUsuario.insert(dto);
+            emailService.sendVerificationEmail(dto.getEmail(), token);
+
+            response.mo.addResponseMesssage("Registro exitoso. Verifica tu correo para confirmar la cuenta.");
+            response.mo.setSuccess();
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.mo.addResponseMesssage("Error inesperado. Intenta nuevamente más tarde.");
+            response.mo.setException();
         }
-
-        // *** VALIDACIÓN DEL DOMINIO DEL CORREO ***
-        if (!request.getEmail().toLowerCase().endsWith("@unamba.edu.pe")) {
-            response.mo.addResponseMesssage("Solo se permiten correos @unamba.edu.pe para registrarse.");
-            return new ResponseEntity<>(response, HttpStatus.BAD_REQUEST);
-        }
-
-        DtoUsuario dto = new DtoUsuario();
-        dto.setNombre(request.getNombre());
-        dto.setApellidos(request.getApellidos());
-        dto.setEmail(request.getEmail());
-        dto.setContraseña(request.getContraseña());
-        dto.setCelular(request.getCelular());
-        dto.setProfesion(request.getProfesion());
-
-        LocalDate fechaLocal = request.getFechaNacimiento();
-        Date fechaDate = Date.from(fechaLocal.atStartOfDay(ZoneId.systemDefault()).toInstant());
-        dto.setFechaNacimiento(fechaDate);
-
-        
-        String token = businessUsuario.insert(dto);
-
-        
-        emailService.sendVerificationEmail(dto.getEmail(), token);
-
-        response.mo.addResponseMesssage("Registro exitoso. Verifica tu correo para confirmar la cuenta.");
-        response.mo.setSuccess();
-    } catch (Exception e) {
-        e.printStackTrace();
-        response.mo.addResponseMesssage("Error inesperado. Intenta nuevamente más tarde.");
-        response.mo.setException();
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
-    return new ResponseEntity<>(response, HttpStatus.CREATED);
-}
-
 
     /**
      * Confirmación de email mediante token.
      */
-
     @GetMapping("/confirmar")
     public ResponseEntity<ResponseInsert> confirmarEmail(@RequestParam String token) {
         ResponseInsert response = new ResponseInsert();
@@ -130,28 +130,13 @@ public class UsuarioController {
     }
 
     /**
-     * Endpoint para probar envío de email.
-     */
-    
-    @GetMapping("/test-email")
-    public ResponseEntity<String> testEmail(@RequestParam String email) {
-        try {
-            emailService.sendTestEmail(email);
-            return ResponseEntity.ok("Correo de prueba enviado a " + email);
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body("Error al enviar correo: " + e.getMessage());
-        }
-    }
-    /*
-     * L O G I N
+     * Login con email y contraseña encriptada.
      */
     @PostMapping("/login")
     public ResponseEntity<ResponseInsert> login(@Valid @RequestBody DtoUsuario dtoUsuario) {
         ResponseInsert response = new ResponseInsert();
         try {
-            boolean isAuthenticated = businessUsuario.login(dtoUsuario);
+            boolean isAuthenticated = businessUsuario.loginConHash(dtoUsuario, passwordEncoder);
             if (isAuthenticated) {
                 response.mo.addResponseMesssage("Inicio de sesión exitoso");
                 response.mo.setSuccess();
@@ -165,8 +150,9 @@ public class UsuarioController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
-    /*
-     * U P D A T E
+
+    /**
+     * Actualización de perfil con encriptación de contraseña.
      */
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<ResponseInsert> actualizarUsuario(
@@ -175,6 +161,11 @@ public class UsuarioController {
 
         ResponseInsert response = new ResponseInsert();
         try {
+            // Encriptar contraseña si fue enviada
+            if (dtoUsuario.getContraseña() != null && !dtoUsuario.getContraseña().isEmpty()) {
+                dtoUsuario.setContraseña(passwordEncoder.encode(dtoUsuario.getContraseña()));
+            }
+
             boolean actualizado = businessUsuario.update(id, dtoUsuario);
 
             if (actualizado) {
@@ -192,5 +183,29 @@ public class UsuarioController {
         }
     }
 
+    @PutMapping("/actualizar-foto-resumen/{id}")
+    public ResponseEntity<ResponseInsert> actualizarFotoResumen(
+            @PathVariable Long id,
+            @RequestParam(required = false) String fotoUrl,
+            @RequestParam(required = false) String resumen) {
+
+        ResponseInsert response = new ResponseInsert();
+        try {
+            boolean actualizado = businessUsuario.updateFotoResumen(id, fotoUrl, resumen);
+
+            if (actualizado) {
+                response.mo.addResponseMesssage("Foto y/o resumen actualizados correctamente.");
+                response.mo.setSuccess();
+                return new ResponseEntity<>(response, HttpStatus.OK);
+            } else {
+                response.mo.addResponseMesssage("Usuario no encontrado.");
+                return new ResponseEntity<>(response, HttpStatus.NOT_FOUND);
+            }
+
+        } catch (Exception e) {
+            response.mo.addResponseMesssage("Error al actualizar: " + e.getMessage());
+            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
 
 }
