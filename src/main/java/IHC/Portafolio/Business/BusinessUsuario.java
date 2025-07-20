@@ -1,6 +1,7 @@
 package IHC.Portafolio.Business;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -10,7 +11,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import IHC.Portafolio.Dto.DtoUsuario;
+import IHC.Portafolio.Entity.TRecuperacionCuenta;
 import IHC.Portafolio.Entity.TUsuario;
+import IHC.Portafolio.Repository.RepoRecuperacionCuenta;
 import IHC.Portafolio.Repository.RepoUsuario;
 
 import jakarta.transaction.Transactional;
@@ -20,6 +23,8 @@ public class BusinessUsuario {
 
     @Autowired
     private RepoUsuario repoUsuario;
+    @Autowired
+    private RepoRecuperacionCuenta repoRecuperacion;
 
     public List<DtoUsuario> getAll() {
         List<TUsuario> listTUsuario = repoUsuario.findAll();
@@ -152,6 +157,51 @@ public class BusinessUsuario {
         }
 
         repoUsuario.save(usuario);
+        return true;
+    }
+    /*
+     * Recuperación de cuenta
+     */
+    @Transactional
+    public String solicitarRecuperacion(String email) {
+        Optional<TUsuario> usuarioOpt = repoUsuario.findByEmail(email);
+        if (!usuarioOpt.isPresent()) {
+            throw new RuntimeException("Usuario no encontrado.");
+        }
+
+        TUsuario usuario = usuarioOpt.get();
+
+        TRecuperacionCuenta rec = new TRecuperacionCuenta();
+        rec.setUsuario(usuario);
+        rec.setToken(UUID.randomUUID().toString());
+        rec.setFechaExpiracion(new Date(System.currentTimeMillis() + (30 * 60 * 1000))); // 30 min
+        rec.setUsado(false);
+
+        repoRecuperacion.save(rec);
+
+        return rec.getToken();
+    }
+    /*
+     * Recuperación de cuenta con token
+     */
+    @Transactional
+    public boolean restablecerPassword(String token, String nuevaPassword, PasswordEncoder encoder) {
+        Optional<TRecuperacionCuenta> recOpt = repoRecuperacion.findByToken(token);
+        if (!recOpt.isPresent()) return false;
+
+        TRecuperacionCuenta rec = recOpt.get();
+
+        if (rec.isUsado() || rec.getFechaExpiracion().before(new Date())) {
+            return false;
+        }
+
+        TUsuario usuario = rec.getUsuario();
+        usuario.setContraseña(encoder.encode(nuevaPassword));
+        rec.setUsado(true);
+
+        repoUsuario.save(usuario);
+        repoRecuperacion.save(rec);
+
         return true;
     }
 

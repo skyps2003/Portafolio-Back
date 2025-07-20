@@ -38,6 +38,7 @@ public class UsuarioController {
 
     /**
      * Obtener todos los usuarios (solo datos públicos).
+     * Retorna una lista de usuarios con nombre, apellidos, email y estado activo.
      */
     @GetMapping("/todos")
     public ResponseEntity<ResponseGetAll> getAll() {
@@ -63,6 +64,7 @@ public class UsuarioController {
 
     /**
      * Registro de usuario con verificación de email.
+     * Solo permite correos @unamba.edu.pe.
      */
     @PostMapping(path = "/registro", consumes = "multipart/form-data")
     public ResponseEntity<ResponseInsert> registrarUsuario(
@@ -88,7 +90,7 @@ public class UsuarioController {
             dto.setApellidos(request.getApellidos());
             dto.setEmail(request.getEmail());
 
-            // Encriptar contraseña
+           
             dto.setContraseña(passwordEncoder.encode(request.getContraseña()));
 
             dto.setCelular(request.getCelular());
@@ -113,6 +115,7 @@ public class UsuarioController {
 
     /**
      * Confirmación de email mediante token.
+     * Si el token es válido, activa la cuenta del usuario.
      */
     @GetMapping("/confirmar")
     public ResponseEntity<ResponseInsert> confirmarEmail(@RequestParam String token) {
@@ -131,6 +134,7 @@ public class UsuarioController {
 
     /**
      * Login con email y contraseña encriptada.
+     * Si la cuenta no está activada, no permite el acceso.
      */
     @PostMapping("/login")
     public ResponseEntity<ResponseInsert> login(@Valid @RequestBody DtoUsuario dtoUsuario) {
@@ -153,6 +157,7 @@ public class UsuarioController {
 
     /**
      * Actualización de perfil con encriptación de contraseña.
+     * Si la contraseña no se envía, no se actualiza.
      */
     @PutMapping("/actualizar/{id}")
     public ResponseEntity<ResponseInsert> actualizarUsuario(
@@ -182,6 +187,10 @@ public class UsuarioController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+    /*
+     * Actualización de foto y resumen del usuario.
+     * Permite actualizar solo la foto, solo el resumen o ambos.
+     */
 
     @PutMapping("/actualizar-foto-resumen/{id}")
     public ResponseEntity<ResponseInsert> actualizarFotoResumen(
@@ -207,5 +216,52 @@ public class UsuarioController {
             return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
+
+    /*
+     * Solicitar recuperación de contraseña.
+     * Envía un correo con un token para restablecer la contraseña.
+     */
+
+    @PostMapping("/recuperar")
+    public ResponseEntity<ResponseInsert> solicitarRecuperacion(@RequestParam String email) {
+        ResponseInsert response = new ResponseInsert();
+        try {
+            String token = businessUsuario.solicitarRecuperacion(email);
+            emailService.sendPasswordRecoveryEmail(email, token); // NUEVO MÉTODO
+            response.mo.addResponseMesssage("Correo de recuperación enviado.");
+            response.mo.setSuccess();
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            response.mo.addResponseMesssage("Error: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+        }
+    }
+    /*
+     * Restablecer la contraseña usando un token.
+     * El token debe ser válido y no expirado.
+     */
+
+    @PostMapping("/restablecer")
+    public ResponseEntity<ResponseInsert> restablecerPassword(
+            @RequestParam String token,
+            @RequestParam String nuevaPassword) {
+
+        ResponseInsert response = new ResponseInsert();
+        try {
+            boolean ok = businessUsuario.restablecerPassword(token, nuevaPassword, passwordEncoder);
+            if (ok) {
+                response.mo.addResponseMesssage("Contraseña restablecida correctamente.");
+                response.mo.setSuccess();
+                return ResponseEntity.ok(response);
+            } else {
+                response.mo.addResponseMesssage("Token inválido o expirado.");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+            }
+        } catch (Exception e) {
+            response.mo.addResponseMesssage("Error interno: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+        }
+    }
+
 
 }

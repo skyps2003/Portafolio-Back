@@ -49,4 +49,31 @@ public class EmailService {
         mailSender.send(message);
         System.out.println("Correo de prueba enviado a: " + toEmail);
     }
+
+    public void sendPasswordRecoveryEmail(String toEmail, String token) throws MessagingException {
+        String subject = "Recuperación de contraseña";
+        String recoveryUrl = "http://localhost:8081/usuario/restablecer?token=" + token;
+
+        String htmlContent = "<html><body>" +
+                "<h2 style='color:#C0392B;'>Recupera tu contraseña</h2>" +
+                "<p>Recibimos una solicitud para restablecer tu contraseña.</p>" +
+                "<p>Haz clic en el siguiente botón para continuar:</p>" +
+                "<a href=\"" + recoveryUrl + "\" " +
+                "style='display:inline-block;padding:10px 20px;background-color:#e67e22;color:#ffffff;text-decoration:none;border-radius:5px;'>Restablecer contraseña</a>" +
+                "<p style='margin-top:20px;'>Si no solicitaste este cambio, ignora este correo.</p>" +
+                "<br><p style='font-size:12px;color:#888;'>© TuEmpresa</p>" +
+                "</body></html>";
+
+        MimeMessage message = mailSender.createMimeMessage();
+        MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+        helper.setTo(toEmail);
+        helper.setSubject(subject);
+        helper.setText(htmlContent, true); // true = HTML
+        helper.setFrom("terateniete@gmail.com");
+
+        mailSender.send(message);
+        System.out.println("Correo de recuperación enviado a: " + toEmail + " con token: " + token);
+    }
+
 }
