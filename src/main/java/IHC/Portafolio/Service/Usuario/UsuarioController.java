@@ -20,7 +20,7 @@ import IHC.Portafolio.Service.Generic.EmailService;
 import IHC.Portafolio.Service.Usuario.RequestObject.RequestInsert;
 import IHC.Portafolio.Service.Usuario.ResponseObject.ResponseGetAll;
 import IHC.Portafolio.Service.Usuario.ResponseObject.ResponseInsert;
-
+import IHC.Portafolio.security.JwtUtil;
 import jakarta.validation.Valid;
 
 @RestController
@@ -35,6 +35,10 @@ public class UsuarioController {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private JwtUtil jwtUtil;
+
 
     /**
      * Obtener todos los usuarios (solo datos públicos).
@@ -137,24 +141,28 @@ public class UsuarioController {
      * Si la cuenta no está activada, no permite el acceso.
      */
     @PostMapping("/login")
-    public ResponseEntity<ResponseInsert> login(@Valid @RequestBody DtoUsuario dtoUsuario) {
-        ResponseInsert response = new ResponseInsert();
-        try {
-            boolean isAuthenticated = businessUsuario.loginConHash(dtoUsuario, passwordEncoder);
-            if (isAuthenticated) {
-                response.mo.addResponseMesssage("Inicio de sesión exitoso");
-                response.mo.setSuccess();
-                return new ResponseEntity<>(response, HttpStatus.OK);
-            } else {
-                response.mo.addResponseMesssage("Email o contraseña incorrectos, o cuenta no activada");
-                return new ResponseEntity<>(response, HttpStatus.UNAUTHORIZED);
-            }
-        } catch (Exception e) {
-            response.mo.addResponseMesssage("Error interno: " + e.getMessage());
-            return new ResponseEntity<>(response, HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
+public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody DtoUsuario dtoUsuario) {
+    Map<String, Object> response = new HashMap<>();
+    try {
+        boolean isAuthenticated = businessUsuario.loginConHash(dtoUsuario, passwordEncoder);
 
+        if (isAuthenticated) {
+            // Generar token JWT
+            String token = jwtUtil.generateToken(dtoUsuario);
+
+            response.put("message", "Inicio de sesión exitoso");
+            response.put("token", token);
+            response.put("email", dtoUsuario.getEmail());
+            return ResponseEntity.ok(response);
+        } else {
+            response.put("message", "Email o contraseña incorrectos, o cuenta no activada");
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+        }
+    } catch (Exception e) {
+        response.put("error", "Error interno: " + e.getMessage());
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+    }
+}
     /**
      * Actualización de perfil con encriptación de contraseña.
      * Si la contraseña no se envía, no se actualiza.
