@@ -78,6 +78,10 @@ public class BusinessHabilidadUsuario {
         }
         return "No se encontró la habilidad asignada al usuario.";
     }
+    /*
+     * 
+     */
+    
 
 
 }
