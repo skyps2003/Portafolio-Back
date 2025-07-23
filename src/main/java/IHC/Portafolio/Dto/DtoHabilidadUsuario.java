@@ -9,4 +9,4 @@ public class DtoHabilidadUsuario {
     private Long id;
     private Long usuarioId;
     private Long habilidadId;
-}
+    private String nivel; }

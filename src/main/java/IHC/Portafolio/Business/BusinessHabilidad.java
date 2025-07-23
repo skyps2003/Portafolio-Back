@@ -12,6 +12,9 @@ import IHC.Portafolio.Repository.RepoHabilidad;
 public class BusinessHabilidad {
     @Autowired
     private RepoHabilidad repoHabilidad;
+    /*
+     * L I S T A R  T O D A S
+     */
     public List<DtoHabilidad> getAll() {
         List<THabilidad> listTHabilidad = repoHabilidad.findAll();
         List<DtoHabilidad> listDtoHabilidad = new ArrayList<>();

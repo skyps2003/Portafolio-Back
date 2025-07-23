@@ -5,9 +5,8 @@ import lombok.Setter;
 
 @Getter
 @Setter
-
-public class DtoHabilidad {
+public class DtoIdioma {
     private Long id;
     private String nombre;
-    private String nivel;
+    private String nivel;  // Si quieres manejar el nivel directamente en el DTO
 }

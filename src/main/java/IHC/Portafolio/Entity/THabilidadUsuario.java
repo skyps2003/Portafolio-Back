@@ -22,4 +22,7 @@ public class THabilidadUsuario {
     @ManyToOne
     @JoinColumn(name = "habilidad_id", nullable = false)
     private THabilidad habilidad;
+
+    @Column(name = "nivel", length = 50)
+    private String nivel; // Nuevo campo
 }

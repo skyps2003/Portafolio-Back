@@ -41,10 +41,12 @@ public class BusinessHabilidadUsuario {
         THabilidadUsuario hu = new THabilidadUsuario();
         hu.setUsuario(usuario);
         hu.setHabilidad(habilidad);
+        hu.setNivel(dto.getNivel()); 
 
         repoHabilidadUsuario.save(hu);
         return "Habilidad asignada correctamente.";
     }
+
     /*
      * Obtiene las habilidades de un usuario
      */
@@ -57,6 +59,7 @@ public class BusinessHabilidadUsuario {
             DtoHabilidad dto = new DtoHabilidad();
             dto.setId(h.getId());
             dto.setNombre(h.getNombre());
+            dto.setNivel(item.getNivel()); // Asignar el nivel de la habilidad
             habilidades.add(dto);
         }
 

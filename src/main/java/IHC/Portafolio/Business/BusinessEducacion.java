@@ -14,6 +14,9 @@ public class BusinessEducacion {
 
     @Autowired
     private RepoEducacion repoEducacion;
+    /*
+     * L I S T A R  P O R  U S U A R I O
+     */
 
     public List<DtoEducacion> getAllByUsuario(Long usuarioId) {
         List<TEducacion> list = repoEducacion.findByUsuarioId(usuarioId);
@@ -31,6 +34,9 @@ public class BusinessEducacion {
         }
         return dtoList;
     }
+    /*
+     * G U A R D A R
+     */
 
     public DtoEducacion save(DtoEducacion dto) {
         TEducacion entity = new TEducacion();
@@ -44,6 +50,9 @@ public class BusinessEducacion {
         dto.setId(saved.getId());
         return dto;
     }
+    /* 
+     * E L I M I N A R
+     */
 
     public void delete(Long id) {
         repoEducacion.deleteById(id);

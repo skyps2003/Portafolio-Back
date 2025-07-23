@@ -44,7 +44,7 @@ public class HabilidadUsuarioController {
     /*
      * Obtiene las habilidades de un usuario
      */
-    @GetMapping("/usuario/{id}")
+   @GetMapping("/usuario/{id}")
     public ResponseEntity<ResponseGetAll> getHabilidadesPorUsuario(@PathVariable Long id) {
         ResponseGetAll response = new ResponseGetAll();
         try {
@@ -54,17 +54,17 @@ public class HabilidadUsuarioController {
                 Map<String, Object> map = new HashMap<>();
                 map.put("id", item.getId());
                 map.put("nombre", item.getNombre());
+                map.put("nivel", item.getNivel());  // DEVOLVER NIVEL
                 response.dto.listTHabilidad.add(map);
             }
-
             response.mo.setSuccess();
         } catch (Exception e) {
             response.mo.addResponseMesssage("Error al obtener habilidades del usuario.");
             response.mo.setException();
         }
-
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
+
     /*
      * Elimina una habilidad de un usuario
      */

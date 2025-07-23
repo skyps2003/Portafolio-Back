@@ -270,6 +270,10 @@ public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody DtoUsuario 
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
-
+    /*
+     * Obtiene las habilidades de un usuario.
+     * Retorna una lista de habilidades con nombre y nivel.
+     */
+    
 
 }
