@@ -18,7 +18,7 @@ public class RequestInsert {
     @NotBlank(message = "El campo \"email\" es requerido")
     private String email;
     @NotBlank(message = "El campo \"contraseña\" es requerido")
-    private String contraseña;
+    private String contrasena;
     @NotBlank(message = "El campo \"celular\" es requerido")
     private String celular;
     @NotBlank(message = "El campo \"profesion\" es requerido")

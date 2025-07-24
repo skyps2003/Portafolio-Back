@@ -36,8 +36,8 @@ public class TUsuario {
     @Column(name = "celular")
     private String celular;
 
-    @Column(name = "contraseña")
-    private String contraseña;
+    @Column(name = "contraseña") 
+    private String contrasena;
 
     @Column(name = "foto_url")
     private String fotoUrl;

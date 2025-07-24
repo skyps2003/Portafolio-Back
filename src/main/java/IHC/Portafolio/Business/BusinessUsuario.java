@@ -37,7 +37,7 @@ public class BusinessUsuario {
             dtoUsuario.setProfesion(item.getProfesion());
             dtoUsuario.setEmail(item.getEmail());
             dtoUsuario.setCelular(item.getCelular());
-            dtoUsuario.setContraseña(item.getContraseña());
+            dtoUsuario.setContrasena(item.getContrasena());
             dtoUsuario.setFotoUrl(item.getFotoUrl());
             dtoUsuario.setResumen(item.getResumen());
             dtoUsuario.setFechaNacimiento(item.getFechaNacimiento());
@@ -58,7 +58,7 @@ public class BusinessUsuario {
         tUsuario.setProfesion(dtoUsuario.getProfesion());
         tUsuario.setEmail(dtoUsuario.getEmail());
         tUsuario.setCelular(dtoUsuario.getCelular());
-        tUsuario.setContraseña(dtoUsuario.getContraseña()); 
+        tUsuario.setContrasena(dtoUsuario.getContrasena()); 
         tUsuario.setFotoUrl(dtoUsuario.getFotoUrl());
         tUsuario.setResumen(dtoUsuario.getResumen());
         tUsuario.setFechaNacimiento(dtoUsuario.getFechaNacimiento());
@@ -100,7 +100,7 @@ public class BusinessUsuario {
 
         TUsuario usuario = optional.get();
 
-        if (!passwordEncoder.matches(dtoUsuario.getContraseña(), usuario.getContraseña())) {
+        if (!passwordEncoder.matches(dtoUsuario.getContrasena(), usuario.getContrasena())) {
             return false;
         }
 
@@ -124,8 +124,8 @@ public class BusinessUsuario {
         usuario.setEmail(dtoUsuario.getEmail());
         usuario.setCelular(dtoUsuario.getCelular());
 
-        if (dtoUsuario.getContraseña() != null && !dtoUsuario.getContraseña().isEmpty()) {
-            usuario.setContraseña(dtoUsuario.getContraseña());
+        if (dtoUsuario.getContrasena() != null && !dtoUsuario.getContrasena().isEmpty()) {
+            usuario.setContrasena(dtoUsuario.getContrasena());
         }
 
         usuario.setFotoUrl(dtoUsuario.getFotoUrl());
@@ -196,7 +196,7 @@ public class BusinessUsuario {
         }
 
         TUsuario usuario = rec.getUsuario();
-        usuario.setContraseña(encoder.encode(nuevaPassword));
+        usuario.setContrasena(encoder.encode(nuevaPassword));
         rec.setUsado(true);
 
         repoUsuario.save(usuario);

@@ -92,10 +92,10 @@ public class UsuarioController {
             DtoUsuario dto = new DtoUsuario();
             dto.setNombre(request.getNombre());
             dto.setApellidos(request.getApellidos());
-            dto.setEmail(request.getEmail());
+            dto.setEmail(request.getEmail());   
 
            
-            dto.setContraseña(passwordEncoder.encode(request.getContraseña()));
+            dto.setContrasena(passwordEncoder.encode(request.getContrasena()));
 
             dto.setCelular(request.getCelular());
             dto.setProfesion(request.getProfesion());
@@ -175,8 +175,8 @@ public ResponseEntity<Map<String, Object>> login(@Valid @RequestBody DtoUsuario 
         ResponseInsert response = new ResponseInsert();
         try {
             // Encriptar contraseña si fue enviada
-            if (dtoUsuario.getContraseña() != null && !dtoUsuario.getContraseña().isEmpty()) {
-                dtoUsuario.setContraseña(passwordEncoder.encode(dtoUsuario.getContraseña()));
+            if (dtoUsuario.getContrasena() != null && !dtoUsuario.getContrasena().isEmpty()) {
+                dtoUsuario.setContrasena(passwordEncoder.encode(dtoUsuario.getContrasena()));
             }
 
             boolean actualizado = businessUsuario.update(id, dtoUsuario);

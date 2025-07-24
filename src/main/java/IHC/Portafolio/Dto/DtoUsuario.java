@@ -13,7 +13,7 @@ public class DtoUsuario {
     private String profesion;
     private String email;
     private String celular;
-    private String contraseña;
+    private String contrasena;
     private String fotoUrl;
     private String resumen;
     private Date fechaNacimiento;

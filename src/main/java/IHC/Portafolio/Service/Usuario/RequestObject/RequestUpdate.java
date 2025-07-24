@@ -13,6 +13,6 @@ public class RequestUpdate {
     @NotBlank(message = "El campo \"email\" es requerido")
     private String email;
     @NotBlank(message = "El campo \"contraseña\" es requerido")
-    private String contraseña;
+    private String contrasena;
 
 }
